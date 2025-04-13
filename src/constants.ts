@@ -33,7 +33,7 @@ export const inputSettings: InputMap[] = [
 ];
 
 export const Colors = {
-	BACKGROUND: '#EEE',
+	BACKGROUND: '#FFF',
 	BLOCK: '#555',
 	APPLE: '#FF0000BB',
 	PLAYER_HEAD_DEFAULT: '#00b200BB',

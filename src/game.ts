@@ -48,6 +48,8 @@ export class Game {
 		this.canvas.style.border = '1px solid black';
 		this.canvas.style.margin = 'auto';
 		this.canvas.style.display = 'block';
+		this.canvas.style.height = '80vh';
+		this.canvas.style.aspectRatio = `${this.boardWidth} / ${this.boardHeight}`;
 
 		if (!document.body) throw new Error('Document body не найден.');
 		document.body.append(this.canvas);

@@ -505,7 +505,7 @@ import './styles/main.scss'; // Импорт стилей
 import { Game } from './game';
 import { level1 } from './level'; // Импортируем наш уровень
 
-const CELL_SIZE = 40; // Размер ячейки в пикселях
+const CELL_SIZE = 100; // Размер ячейки в пикселях
 
 // Создаем и запускаем игру с первым уровнем
 const game = new Game(level1, CELL_SIZE);
@@ -513,16 +513,19 @@ game.start();
 
 // Дополнительно: можно добавить кнопки управления Start/Stop/Reset
 const controlsDiv = document.createElement('div');
+controlsDiv.style.display = 'flex';
+controlsDiv.style.justifyContent = 'center';
+controlsDiv.style.gap = '10px';
 controlsDiv.style.textAlign = 'center';
 controlsDiv.style.marginTop = '10px';
 controlsDiv.style.color = 'black';
 
 const startButton = document.createElement('button');
-startButton.textContent = 'Start / Resume';
+startButton.textContent = 'Start';
 startButton.addEventListener('click', () => game.start());
 
 const stopButton = document.createElement('button');
-stopButton.textContent = 'Stop / Pause';
+stopButton.textContent = 'Stop';
 stopButton.addEventListener('click', () => game.stop());
 
 // Кнопка Reset потребует больше логики (пересоздание Game или метод reset())
