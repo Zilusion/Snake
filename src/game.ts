@@ -8,37 +8,53 @@ import type { Point, DirectionValue, LevelData, InputMap } from './types';
 import { parseLevelLayout } from './level';
 
 export class Game {
+	public isActive: boolean = false;
+
+	public readonly levelData: LevelData;
 	private readonly canvas: HTMLCanvasElement;
 	private readonly boardWidth: number;
 	private readonly boardHeight: number;
 	private readonly cellSize: number;
 	private readonly renderer: Renderer;
 	private readonly inputManager: InputManager;
+	private readonly gameContainer: HTMLElement;
+	private readonly onVictory: (completedLevelData: LevelData) => void;
 
 	private players: Player[] = [];
 	private apples: Apple[] = [];
 	private blocks: Block[] = [];
 
-	private isActive: boolean = false;
-	private gameLoopIntervalId: number | null = null;
+	private gameLoopId: number | null = null;
 
 	private keyActionMap: Map<
 		string,
 		{ playerId: number; direction: DirectionValue }
 	> = new Map();
 
-	public constructor(level: LevelData, cellSize: number) {
-		this.boardWidth = level.width;
-		this.boardHeight = level.height;
+	public constructor(
+		levelData: LevelData,
+		cellSize: number,
+		container: HTMLElement,
+		onVictoryCallback: (completedLevelData: LevelData) => void,
+	) {
+		this.levelData = levelData;
+		this.boardWidth = levelData.width;
+		this.boardHeight = levelData.height;
 		this.cellSize = cellSize;
+		this.gameContainer = container;
+		this.onVictory = onVictoryCallback;
 
 		const {
 			blocks,
 			apples: initialApples,
 			playerStarts,
-		} = parseLevelLayout(level);
+		} = parseLevelLayout(this.levelData);
 		this.blocks = blocks;
 		this.apples = initialApples;
+
+		if (playerStarts.length === 0) {
+			throw new Error('Уровень не содержит стартовых позиций игроков.');
+		}
 
 		const canvasWidth: number = this.boardWidth * this.cellSize;
 		const canvasHeight: number = this.boardHeight * this.cellSize;
@@ -48,11 +64,12 @@ export class Game {
 		this.canvas.style.border = '1px solid black';
 		this.canvas.style.margin = 'auto';
 		this.canvas.style.display = 'block';
-		this.canvas.style.height = '80vh';
+		this.canvas.style.maxWidth = '100%';
+		this.canvas.style.maxHeight = 'calc(80vh - 50px)';
 		this.canvas.style.aspectRatio = `${this.boardWidth} / ${this.boardHeight}`;
+		this.canvas.style.objectFit = 'contain';
 
-		if (!document.body) throw new Error('Document body не найден.');
-		document.body.append(this.canvas);
+		this.gameContainer.append(this.canvas);
 
 		this.renderer = new Renderer(this.canvas, this.cellSize);
 		this.inputManager = new InputManager();
@@ -62,7 +79,7 @@ export class Game {
 	}
 
 	public start(): void {
-		if (this.gameLoopIntervalId !== null) return;
+		if (this.gameLoopId !== null || this.isActive) return;
 		this.isActive = true;
 		console.log('Игра началась!');
 
@@ -72,7 +89,7 @@ export class Game {
 
 		const gameTick = (currentTime: number): void => {
 			if (!this.isActive) {
-				this.gameLoopIntervalId = null;
+				this.gameLoopId = null;
 				return;
 			}
 
@@ -83,18 +100,29 @@ export class Game {
 				this.update();
 				this.render();
 			}
-			this.gameLoopIntervalId = requestAnimationFrame(gameTick);
+			this.gameLoopId = this.isActive
+				? requestAnimationFrame(gameTick)
+				: null;
 		};
-		this.gameLoopIntervalId = requestAnimationFrame(gameTick);
+		this.gameLoopId = requestAnimationFrame(gameTick);
 	}
 
 	public stop(): void {
-		if (this.gameLoopIntervalId !== null) {
-			cancelAnimationFrame(this.gameLoopIntervalId);
-			this.gameLoopIntervalId = null;
+		if (this.gameLoopId !== null) {
+			cancelAnimationFrame(this.gameLoopId);
+			this.gameLoopId = null;
 		}
-		this.isActive = false;
-		console.log('Игра остановлена.');
+		if (this.isActive) {
+			this.isActive = false;
+			console.log('Игра остановлена.');
+		}
+	}
+
+	public destroy(): void {
+		this.stop();
+		this.inputManager.destroy();
+		this.canvas.remove();
+		console.log('Экземпляр игры уничтожен.');
 	}
 
 	private createPlayers(startPositions: Point[]): void {
@@ -140,23 +168,19 @@ export class Game {
 	private update(): void {
 		if (!this.isActive) return;
 
-		// 1. Получаем И буферизированные нажатия, И зажатые клавиши
 		const bufferedKeyPresses = this.inputManager.processBufferedKeys();
-		const activeKeys = this.inputManager.getActiveKeys(); // Зажатые клавиши
+		const activeKeys = this.inputManager.getActiveKeys();
 
-		// Объединяем оба набора - любая клавиша из них должна вызвать действие
 		const keysToCheck = new Set([...bufferedKeyPresses, ...activeKeys]);
 
 		const movedPlayerIds: Set<number> = new Set();
 
-		// 2. Обработка ввода и попытка движения
 		keysToCheck.forEach((key) => {
 			const action = this.keyActionMap.get(key);
 			if (action) {
 				const player = this.players.find(
 					(p) => p.id === action.playerId,
 				);
-				// Двигаем игрока, если он еще не двигался в этом тике
 				if (player && !movedPlayerIds.has(player.id)) {
 					player.performMove(
 						action.direction,
@@ -169,25 +193,21 @@ export class Game {
 						this.boardWidth,
 						this.boardHeight,
 					);
-					// Помечаем игрока как обработанного, независимо от успеха хода
 					movedPlayerIds.add(player.id);
 				}
 			}
 		});
 
-		// 3. Применение гравитации ко ВСЕМ игрокам ПОСЛЕ всех попыток движения
 		this.applyGravityToAllPlayers();
 
-		// 4. Проверка поедания яблок
 		this.players.forEach((player) => {
 			this.checkAppleEating(player);
 		});
 
-		// 5. Проверка условий победы
 		if (this.apples.length === 0 && this.isActive) {
 			console.log('Победа! Все яблоки съедены!');
 			this.stop();
-			return;
+			this.onVictory(this.levelData);
 		}
 	}
 

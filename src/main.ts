@@ -501,40 +501,253 @@
 // // Запускаем игру
 // game.start();
 
-import './styles/main.scss'; // Импорт стилей
+// import './styles/main.scss'; // Импорт стилей
+// import { Game } from './game';
+// import { level1 } from './level'; // Импортируем наш уровень
+
+// const CELL_SIZE = 100; // Размер ячейки в пикселях
+
+// // Создаем и запускаем игру с первым уровнем
+// const game = new Game(level1, CELL_SIZE);
+// game.start();
+
+// // Дополнительно: можно добавить кнопки управления Start/Stop/Reset
+// const controlsDiv = document.createElement('div');
+// controlsDiv.style.display = 'flex';
+// controlsDiv.style.justifyContent = 'center';
+// controlsDiv.style.gap = '10px';
+// controlsDiv.style.textAlign = 'center';
+// controlsDiv.style.marginTop = '10px';
+// controlsDiv.style.color = 'black';
+
+// const startButton = document.createElement('button');
+// startButton.textContent = 'Start';
+// startButton.addEventListener('click', () => game.start());
+
+// const stopButton = document.createElement('button');
+// stopButton.textContent = 'Stop';
+// stopButton.addEventListener('click', () => game.stop());
+
+// // Кнопка Reset потребует больше логики (пересоздание Game или метод reset())
+// // const resetButton = document.createElement('button');
+// // resetButton.textContent = 'Reset';
+// // resetButton.onclick = () => { /* Логика сброса */ };
+
+// controlsDiv.append(startButton, stopButton);
+// document.body.append(controlsDiv);
+
+import './styles/main.scss';
 import { Game } from './game';
-import { level1 } from './level'; // Импортируем наш уровень
+import { allLevels } from './level';
+import type { LevelData } from './types';
 
-const CELL_SIZE = 100; // Размер ячейки в пикселях
+const CELL_SIZE = 40;
+const LS_KEY_CURRENT_LEVEL = 'snakeGameCurrentLevelIndex';
 
-// Создаем и запускаем игру с первым уровнем
-const game = new Game(level1, CELL_SIZE);
-game.start();
-
-// Дополнительно: можно добавить кнопки управления Start/Stop/Reset
+let currentGame: Game | null = null;
+const gameContainer = document.createElement('div');
 const controlsDiv = document.createElement('div');
-controlsDiv.style.display = 'flex';
-controlsDiv.style.justifyContent = 'center';
-controlsDiv.style.gap = '10px';
-controlsDiv.style.textAlign = 'center';
-controlsDiv.style.marginTop = '10px';
-controlsDiv.style.color = 'black';
+let victoryModal: HTMLElement | null = null;
+controlsDiv.classList.add('controls-container');
+
+function loadLevel(levelData: LevelData): void {
+	if (currentGame) {
+		console.log(`Остановка предыдущей игры.`);
+		currentGame.destroy();
+		currentGame = null;
+		gameContainer.innerHTML = '';
+	}
+
+	// --- СОХРАНЕНИЕ УРОВНЯ ---
+	const levelIndex = allLevels.indexOf(levelData);
+	if (levelIndex === -1) {
+		console.warn(
+			'Не удалось найти индекс загружаемого уровня для сохранения.',
+		);
+	} else {
+		try {
+			localStorage.setItem(LS_KEY_CURRENT_LEVEL, levelIndex.toString());
+			console.log(`Сохранен индекс уровня: ${levelIndex}`);
+		} catch (error) {
+			console.error(
+				'Не удалось сохранить уровень в localStorage:',
+				error,
+			);
+		}
+	}
+
+	console.log(`Загрузка уровня...`);
+	try {
+		currentGame = new Game(
+			levelData,
+			CELL_SIZE,
+			gameContainer,
+			handleVictory,
+		);
+		currentGame.start();
+		startButton.disabled = true;
+		stopButton.disabled = false;
+		resetButton.disabled = false;
+		hideVictoryModal();
+	} catch (error) {
+		console.error('Ошибка при создании или запуске игры:', error);
+		gameContainer.innerHTML = `<p style="color: red; text-align: center;">Ошибка загрузки игры. См. консоль.</p>`;
+		startButton.disabled = true;
+		stopButton.disabled = true;
+		resetButton.disabled = true;
+	}
+}
+
+function handleVictory(completedLevelData: LevelData): void {
+	console.log('Победа на уровне!');
+	if (currentGame) {
+		startButton.disabled = false;
+		stopButton.disabled = true;
+	}
+	showVictoryModal(completedLevelData);
+}
+
+function createVictoryModal(): void {
+	victoryModal = document.createElement('div');
+	victoryModal.className = 'modal victory-modal';
+	victoryModal.style.display = 'none';
+
+	const modalContent = document.createElement('div');
+	modalContent.className = 'modal-content';
+
+	const title = document.createElement('h2');
+	title.textContent = 'Победа!';
+	title.className = 'modal-title';
+
+	const message = document.createElement('p');
+	message.textContent = 'Все яблоки съедены!';
+	message.className = 'modal-message';
+
+	const buttonContainer = document.createElement('div');
+	buttonContainer.className = 'modal-buttons';
+
+	const nextLevelButton = document.createElement('button');
+	nextLevelButton.textContent = 'Следующий уровень';
+	nextLevelButton.className = 'modal-button next-level-button';
+	nextLevelButton.addEventListener('click', () => {
+		if (!currentGame) return;
+		const currentLevelIndex = allLevels.indexOf(currentGame.levelData);
+		if (currentLevelIndex === -1) {
+			hideVictoryModal();
+		} else {
+			const nextLevelIndex = (currentLevelIndex + 1) % allLevels.length;
+			loadLevel(allLevels[nextLevelIndex]);
+		}
+	});
+
+	const selectLevelButton = document.createElement('button');
+	selectLevelButton.textContent = 'Выбрать уровень';
+	selectLevelButton.className = 'modal-button select-level-button';
+	selectLevelButton.addEventListener('click', hideVictoryModal);
+
+	buttonContainer.append(nextLevelButton, selectLevelButton);
+	modalContent.append(title, message, buttonContainer);
+	victoryModal.append(modalContent);
+	document.body.append(victoryModal);
+}
+
+function showVictoryModal(completedLevelData: LevelData): void {
+	if (!victoryModal) return;
+
+	const nextLevelButton =
+		victoryModal.querySelector<HTMLButtonElement>('.next-level-button');
+	if (nextLevelButton) {
+		const currentLevelIndex = allLevels.indexOf(completedLevelData);
+		console.log(currentLevelIndex);
+		nextLevelButton.style.display = 'inline-block';
+	}
+
+	victoryModal.style.display = 'flex';
+}
+
+function hideVictoryModal(): void {
+	if (victoryModal) {
+		victoryModal.style.display = 'none';
+	}
+}
 
 const startButton = document.createElement('button');
-startButton.textContent = 'Start';
-startButton.addEventListener('click', () => game.start());
+startButton.textContent = 'Старт';
+startButton.disabled = true;
+startButton.addEventListener('click', () => {
+	if (currentGame && !currentGame.isActive) {
+		currentGame.start();
+		startButton.disabled = true;
+		stopButton.disabled = false;
+		hideVictoryModal();
+	}
+});
 
 const stopButton = document.createElement('button');
-stopButton.textContent = 'Stop';
-stopButton.addEventListener('click', () => game.stop());
+stopButton.textContent = 'Стоп';
+stopButton.disabled = true;
+stopButton.addEventListener('click', () => {
+	if (currentGame && currentGame.isActive) {
+		currentGame.stop();
+		startButton.disabled = false;
+		stopButton.disabled = true;
+	}
+});
 
-// Кнопка Reset потребует больше логики (пересоздание Game или метод reset())
-// const resetButton = document.createElement('button');
-// resetButton.textContent = 'Reset';
-// resetButton.onclick = () => { /* Логика сброса */ };
+const resetButton = document.createElement('button');
+resetButton.textContent = 'Перезапуск';
+resetButton.disabled = true;
+resetButton.addEventListener('click', () => {
+	if (currentGame) {
+		loadLevel(currentGame.levelData);
+	}
+});
 
-controlsDiv.append(startButton, stopButton);
+allLevels.forEach((level, index) => {
+	const levelButton = document.createElement('button');
+	levelButton.textContent = `Уровень ${index + 1}`;
+	levelButton.addEventListener('click', () => loadLevel(level));
+	controlsDiv.append(levelButton);
+});
+
+controlsDiv.append(startButton, stopButton, resetButton);
+
 document.body.append(controlsDiv);
+document.body.append(gameContainer);
+createVictoryModal();
 
-// Опционально: обработка изменения размера окна для адаптивности canvas
-// window.addEventListener('resize', () => { /* Логика ресайза */ });
+let startingLevelIndex = 0;
+try {
+	const savedIndexString = localStorage.getItem(LS_KEY_CURRENT_LEVEL);
+	if (savedIndexString !== null) {
+		const savedIndex = Number.parseInt(savedIndexString, 10);
+
+		if (
+			!Number.isNaN(savedIndex) &&
+			savedIndex >= 0 &&
+			savedIndex < allLevels.length
+		) {
+			startingLevelIndex = savedIndex;
+			console.log(
+				`Загружен сохраненный индекс уровня: ${startingLevelIndex}`,
+			);
+		} else {
+			console.warn(
+				'Сохраненный индекс уровня невалиден, используется уровень 0.',
+			);
+			localStorage.removeItem(LS_KEY_CURRENT_LEVEL);
+		}
+	}
+} catch (error) {
+	console.error('Не удалось прочитать уровень из localStorage:', error);
+}
+
+if (allLevels.length > 0) {
+	if (startingLevelIndex >= allLevels.length) {
+		startingLevelIndex = 0;
+	}
+	loadLevel(allLevels[startingLevelIndex]);
+} else {
+	console.error('Нет доступных уровней для загрузки!');
+	controlsDiv.innerHTML = '<p style="color: red;">Нет уровней!</p>';
+}
