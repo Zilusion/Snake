@@ -227,8 +227,6 @@ export class Game {
 		this.renderer.render(this.players, this.apples, this.blocks);
 	}
 
-	// --- Новая логика проверки коллизий и гравитации ---
-
 	/**
 	 * Проверяет, занята ли ячейка чем-то "внешним" по отношению к игроку `excludePlayerId`.
 	 * Внешнее = Земля (граница), блок или *другой* игрок.
@@ -307,7 +305,6 @@ export class Game {
 		ownPlayerId: number,
 	): boolean {
 		const belowY = y + 1;
-		// Проверка земли
 		if (belowY >= this.boardHeight) {
 			return true;
 		}

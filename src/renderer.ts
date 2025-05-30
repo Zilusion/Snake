@@ -63,46 +63,24 @@ export class Renderer {
 			this.ctx.fillRect(
 				segment.x * this.cellSize,
 				segment.y * this.cellSize,
-				this.cellSize, // Ширина
-				this.cellSize, // Высота
+				this.cellSize, 
+				this.cellSize, 
 			);
-
-			/* УБИРАЕМ ОБВОДКУ
-			this.ctx.strokeStyle = Colors.BACKGROUND;
-			this.ctx.lineWidth = 1;
-			this.ctx.strokeRect(
-				segment.x * this.cellSize,
-				segment.y * this.cellSize,
-				this.cellSize,
-				this.cellSize,
-			);
-            */
 		});
 	}
 
 	private drawApple(apple: Apple): void {
-		this.ctx.fillStyle = apple.color; // Можно использовать Colors.APPLE
+		this.ctx.fillStyle = apple.color; 
 		this.ctx.fillRect(
 			apple.x * this.cellSize,
 			apple.y * this.cellSize,
 			this.cellSize,
 			this.cellSize,
 		);
-
-		/* УБИРАЕМ ОБВОДКУ
-		this.ctx.strokeStyle = Colors.BACKGROUND;
-		this.ctx.lineWidth = 1;
-		this.ctx.strokeRect(
-			apple.x * this.cellSize,
-			apple.y * this.cellSize,
-			this.cellSize,
-			this.cellSize,
-		);
-        */
 	}
 
 	private drawBlock(block: Block): void {
-        const sprite = getAsset(block.chosenSpriteId); // Получаем конкретный спрайт для этого блока
+        const sprite = getAsset(block.chosenSpriteId);
         if (sprite) {
             this.ctx.drawImage(
                 sprite,

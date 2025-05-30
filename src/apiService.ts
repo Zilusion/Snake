@@ -1,4 +1,4 @@
-const API_BASE_URL = '/api'; // Будет проксироваться Vite
+const API_BASE_URL = '/api';
 
 export async function apiRequest(
 	endpoint: string,
@@ -57,21 +57,32 @@ export async function getMe(): Promise<{ user: { id: number; username: string } 
         return await apiRequest('/auth/me');
     } catch (error: any) {
         if (error.message.includes('401') || error.message.includes('Пользователь не аутентифицирован')) {
-            return null; // Ожидаемая ошибка, если не залогинен
+            return null; 
         }
-        throw error; // Другие ошибки пробрасываем
+        throw error; 
     }
 }
 
-export async function getLevels(): Promise<any[]> { // Типизируйте ответ сервера
-    return apiRequest('/levels') || []; // Возвращаем пустой массив в случае ошибки/отсутствия данных
+export async function getLevels(): Promise<any[]> { 
+    return apiRequest('/levels') || [];
 }
 
 export async function startAttempt(levelId: string): Promise<{ attemptId: number }> {
     return apiRequest('/game/start_attempt', 'POST', { levelId });
 }
 
-export async function completeLevel(payload: {levelId: string; bestTimeMs?: number; finalLength: number; /* attemptId: number; */}): Promise<void> {
-    // Сервер больше не требует attemptId в теле, он берется из сессии или должен быть в URL
+export async function completeLevel(payload: {levelId: string; bestTimeMs?: number; finalLength: number;}): Promise<void> {
     return apiRequest('/game/complete_level', 'POST', payload);
+}
+
+export async function getAdminOverallStats(): Promise<any> {
+    return apiRequest('/admin/stats/overall');
+}
+
+export async function getAdminUsersStats(): Promise<any[]> {
+    return apiRequest('/admin/stats/users');
+}
+
+export async function getAdminLevelsStats(): Promise<any[]> {
+    return apiRequest('/admin/stats/levels');
 }

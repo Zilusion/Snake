@@ -22,16 +22,15 @@ let levelStartTime: number | null = null;
 authStore.subscribe((user) => {
     updateAuthHeaderUI(user);
     if (user) {
-        showPage('game'); // Показываем "игровую страницу"
-        fetchAvailableLevels(); // Просто загружаем и отображаем список уровней
-        // НЕ загружаем уровень автоматически здесь
+        showPage('game'); 
+        fetchAvailableLevels(); 
     } else {
-        updateLevelSelectionUI(); // Очистит список, покажет сообщение о необходимости входа
+        updateLevelSelectionUI(); 
         if (currentGame) {
             currentGame.destroy();
             currentGame = null;
         }
-        gameCanvasContainer.innerHTML = ''; // Очищаем канвас контейнер
+        gameCanvasContainer.innerHTML = ''; 
         disableGameControls();
         showPage('auth');
         createAuthForms();
@@ -39,31 +38,132 @@ authStore.subscribe((user) => {
 });
 
 
-const appContainer = document.getElementById('app-container')!;
 const appHeader = document.getElementById('app-header')!;
 const authPage = document.getElementById('auth-page') as HTMLElement;
 const gamePage = document.getElementById('game-page') as HTMLElement;
+const adminPage = document.getElementById('admin-page') as HTMLElement;
+const adminContent = document.getElementById('admin-content') as HTMLElement;
 const levelSelectionContainer = document.getElementById('level-selection-container') as HTMLElement;
 const gameCanvasContainer = document.getElementById('game-canvas-container') as HTMLElement;
 const gameControlsContainer = document.getElementById('game-controls-container') as HTMLElement;
 const victoryModalContainer = document.getElementById('victory-modal-container') as HTMLElement;
 
 let logoutButton: HTMLButtonElement;
+let adminButton: HTMLButtonElement;
 let currentUserSpan: HTMLSpanElement;
 let startButton: HTMLButtonElement;
 let stopButton: HTMLButtonElement;
 let resetButton: HTMLButtonElement;
 
 
-function showPage(pageId: 'auth' | 'game') {
+function showPage(pageId: 'auth' | 'game' | 'admin') {
     authPage.style.display = 'none';
-    gamePage.style.display = 'none';
+	gamePage.style.display = 'none';
+	adminPage.style.display = 'none';
 
     if (pageId === 'auth') {
         authPage.style.display = 'block';
     } else if (pageId === 'game') {
-        gamePage.style.display = 'flex'; // Используем flex для gamePage, чтобы элементы располагались
+        gamePage.style.display = 'flex';
+    } else if (pageId === 'admin') {
+		adminPage.style.display = 'block';
+		loadAdminStats();
     }
+}
+
+async function loadAdminStats() {
+    try {
+        const overallStats = await api.getAdminOverallStats();
+        const usersStats = await api.getAdminUsersStats();
+        const levelsStats = await api.getAdminLevelsStats();
+
+		adminContent.innerHTML = '';
+        renderOverallStats(overallStats);
+        renderUsersStats(usersStats);
+        renderLevelsStats(levelsStats);
+
+    } catch (error) {
+        adminContent.innerHTML = `<p style="color: red;">Ошибка загрузки статистики: ${error instanceof Error ? error.message : String(error)}</p>`;
+    }
+}
+
+function renderOverallStats(stats: any) {
+    const section = document.createElement('section');
+    section.innerHTML = `
+        <h3>Общая статистика</h3>
+        <p>Всего пользователей: ${stats.usersCount}</p>
+        <p>Всего попыток игры: ${stats.totalAttempts}</p>
+        <p>Успешных попыток: ${stats.successfulAttempts}</p>
+        <p>Среднее время прохождения (успешного): ${stats.averageCompletionTimeMs ? (stats.averageCompletionTimeMs / 1000).toFixed(2) + ' сек' : 'Нет данных'}</p>
+        <p>Самый сложный уровень: ${stats.hardestLevel.name} (Успех: ${stats.hardestLevel.success_rate !== null ? stats.hardestLevel.success_rate.toFixed(1) + '%' : 'Нет данных'})</p>
+    `;
+    adminContent.appendChild(section);
+}
+
+function renderUsersStats(users: any[]) {
+    const section = document.createElement('section');
+    section.innerHTML = '<h3>Статистика по пользователям</h3>';
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Всего попыток</th>
+                <th>Успешных</th>
+                <th>Прогресс по уровням (ID: Попыток / Время)</th>
+            </tr>
+        </thead>
+        <tbody>
+        ${users.map(user => `
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.totalAttempts}</td>
+                <td>${user.successfulAttempts}</td>
+                <td>
+                    ${user.levelProgress.map((p: any) =>
+                        `${p.level_name}: ${p.attempts} / ${p.is_completed ? (p.best_time_ms / 1000).toFixed(1) + 'с' : '-'}`
+                    ).join('<br>')}
+                </td>
+            </tr>
+        `).join('')}
+        </tbody>
+    `;
+    section.appendChild(table);
+    adminContent.appendChild(section);
+}
+
+function renderLevelsStats(levels: any[]) {
+    const section = document.createElement('section');
+    section.innerHTML = '<h3>Статистика по уровням</h3>';
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Всего попыток</th>
+                <th>Успешных</th>
+                <th>% Прохождения</th>
+                <th>Среднее время (успех)</th>
+            </tr>
+        </thead>
+        <tbody>
+        ${levels.map(level => `
+            <tr>
+                <td>${level.id}</td>
+                <td>${level.name}</td>
+                <td>${level.total_attempts || 0}</td>
+                <td>${level.successful_completions || 0}</td>
+                <td>${level.success_percentage !== null ? level.success_percentage.toFixed(1) + '%' : 'N/A'}</td>
+                <td>${level.avg_completion_time_ms ? (level.avg_completion_time_ms / 1000).toFixed(2) + ' сек' : '-'}</td>
+            </tr>
+        `).join('')}
+        </tbody>
+    `;
+    section.appendChild(table);
+    adminContent.appendChild(section);
 }
 
 
@@ -76,14 +176,20 @@ function createHeaderUI() {
     logoutButton = document.createElement('button');
     logoutButton.textContent = 'Выход';
     logoutButton.classList.add('button', 'button-logout');
-    logoutButton.addEventListener('click', logout); // Используем logout из main.ts
+    logoutButton.addEventListener('click', logout); 
     logoutButton.style.display = 'none';
 
     const title = document.createElement('h1');
     title.textContent = 'Змеепад';
-    title.classList.add('app-title');
+	title.classList.add('app-title');
+	
+	adminButton = document.createElement('button');
+	adminButton.textContent = 'Админка';
+	adminButton.classList.add('button', 'button-admin');
+	adminButton.addEventListener('click', () => showPage('admin'));
+	adminButton.style.display = 'none';
 
-    appHeader.append(title, currentUserSpan, logoutButton);
+    appHeader.append(title, currentUserSpan, logoutButton, adminButton);
 }
 
 function createAuthForms() {
@@ -115,23 +221,23 @@ function createAuthForms() {
     const buttonGroup = document.createElement('div');
     buttonGroup.classList.add('auth-buttons');
 
-    const registerButtonElement = document.createElement('button'); // Переименовал, чтобы не конфликтовать с функцией
+    const registerButtonElement = document.createElement('button'); 
     registerButtonElement.textContent = 'Регистрация';
     registerButtonElement.classList.add('button');
     registerButtonElement.addEventListener('click', () => {
         if (usernameInput.value && passwordInput.value) {
-            register(usernameInput.value, passwordInput.value); // Используем register из main.ts
+            register(usernameInput.value, passwordInput.value);
         } else {
             alert('Пожалуйста, введите имя пользователя и пароль.');
         }
     });
 
-    const loginButtonElement = document.createElement('button'); // Переименовал
+    const loginButtonElement = document.createElement('button'); 
     loginButtonElement.textContent = 'Вход';
     loginButtonElement.classList.add('button');
     loginButtonElement.addEventListener('click', () => {
          if (usernameInput.value && passwordInput.value) {
-            login(usernameInput.value, passwordInput.value); // Используем login из main.ts
+            login(usernameInput.value, passwordInput.value);
         } else {
             alert('Пожалуйста, введите имя пользователя и пароль.');
         }
@@ -143,12 +249,10 @@ function createAuthForms() {
 }
 
 function updateAuthHeaderUI(user: { id: number; username: string } | null = null) {
-    // Эта функция теперь в основном меняет только шапку
-    // Логика смены страниц (showPage) и загрузки данных (fetchAvailableLevels)
-    // перенесена в authStore.subscribe
     if (user) {
         currentUserSpan.textContent = `Игрок: ${user.username}`;
-        logoutButton.style.display = 'inline-block';
+		logoutButton.style.display = 'inline-block';
+		adminButton.style.display = 'inline-block';
     } else {
         currentUserSpan.textContent = '';
         logoutButton.style.display = 'none';
@@ -156,21 +260,19 @@ function updateAuthHeaderUI(user: { id: number; username: string } | null = null
 }
 
 function updateLevelSelectionUI() {
-    levelSelectionContainer.innerHTML = ''; // Очищаем
+    levelSelectionContainer.innerHTML = '';
     const user = authStore.getCurrentUser();
 
     if (!user) {
-        // Это состояние обрабатывается в authStore.subscribe -> showPage('auth')
-        // Здесь можно дополнительно очистить, если нужно
         levelSelectionContainer.innerHTML = '<p class="auth-required-message">Для доступа к уровням необходимо войти в систему.</p>';
-        gameCanvasContainer.innerHTML = ''; // Очищаем и контейнер игры
+        gameCanvasContainer.innerHTML = '';
         disableGameControls();
         return;
     }
 
     if (!availableServerLevels || availableServerLevels.length === 0) {
          levelSelectionContainer.innerHTML = '<p class="no-levels-message">Нет доступных уровней или ошибка загрузки.</p>';
-         gameCanvasContainer.innerHTML = ''; // Очищаем и контейнер игры
+         gameCanvasContainer.innerHTML = '';
          disableGameControls();
          return;
     }
@@ -194,33 +296,31 @@ function updateLevelSelectionUI() {
 
         if (!serverLevel.is_locked && serverLevel.layout) {
             levelButton.addEventListener('click', () => {
-                // При клике на уровень, скрываем список уровней и кнопки управления игрой
-                // (если они были видимы от предыдущей игры, хотя loadLevel это и так сделает)
                 levelSelectionContainer.style.display = 'none';
-                gameControlsContainer.style.display = 'flex'; // Показываем кнопки игры
+                gameControlsContainer.style.display = 'flex'; 
                 loadLevel(serverLevel.layout, serverLevel.id);
             });
         }
         levelList.append(levelButton);
     });
     levelSelectionContainer.append(levelList);
-    levelSelectionContainer.style.display = 'flex'; // Показываем список уровней
-    gameCanvasContainer.innerHTML = '<p class="select-level-prompt">Выберите уровень, чтобы начать игру.</p>'; // Заглушка для канваса
-    disableGameControls(); // Кнопки игры по умолчанию выключены, пока уровень не запущен
+    levelSelectionContainer.style.display = 'flex';
+    gameCanvasContainer.innerHTML = '<p class="select-level-prompt">Выберите уровень, чтобы начать игру.</p>';
+    disableGameControls();
 }
 
 function createGameControls() {
     gameControlsContainer.innerHTML = '';
-    gameControlsContainer.style.display = 'none'; // Изначально скрыты
+    gameControlsContainer.style.display = 'none'; 
 
     startButton = document.createElement('button');
-    startButton.textContent = 'Старт'; // Текст может меняться
+    startButton.textContent = 'Старт';
     startButton.classList.add('button', 'game-control-button');
     startButton.disabled = true;
     startButton.addEventListener('click', () => {
         if (currentGame && !currentGame.isActive) {
             currentGame.start();
-            startButton.textContent = 'Старт'; // Если была пауза
+            startButton.textContent = 'Старт';
             startButton.disabled = true;
             stopButton.disabled = false;
             hideVictoryModal();
@@ -245,12 +345,12 @@ function createGameControls() {
     resetButton.classList.add('button', 'game-control-button');
     resetButton.disabled = true;
     resetButton.addEventListener('click', () => {
-        if (currentLevelServerId) { // Перезапускаем текущий выбранный уровень
+        if (currentLevelServerId) { 
             const levelToReload = availableServerLevels.find(l => l.id === currentLevelServerId);
             if (levelToReload && levelToReload.layout) {
-                hideVictoryModal(); // Если была открыта модалка
-                levelSelectionContainer.style.display = 'none'; // Скрываем выбор уровней
-                gameControlsContainer.style.display = 'flex';  // Показываем кнопки игры
+                hideVictoryModal(); 
+                levelSelectionContainer.style.display = 'none'; 
+                gameControlsContainer.style.display = 'flex'; 
                 loadLevel(levelToReload.layout, levelToReload.id);
             } else {
                 console.error("Не удалось перезапустить: данные текущего уровня не найдены");
@@ -269,15 +369,14 @@ function createGameControls() {
         gameCanvasContainer.innerHTML = '<p class="select-level-prompt">Выберите уровень, чтобы начать игру.</p>';
         levelSelectionContainer.style.display = 'flex';
         gameControlsContainer.style.display = 'none';
-        disableGameControls(); // Сбрасываем состояние кнопок
-        currentLevelServerId = null; // Сбрасываем текущий уровень
-        localStorage.removeItem(LS_KEY_SAVED_LEVEL_SERVER_ID); // Очищаем сохраненный уровень
+        disableGameControls();
+        currentLevelServerId = null; 
+        localStorage.removeItem(LS_KEY_SAVED_LEVEL_SERVER_ID); 
     });
 
     gameControlsContainer.append(startButton, stopButton, resetButton, backToLevelsButton);
 }
 
-// УДАЛЯЕМ fetchAvailableLevelsAndLoadInitial, т.к. автозагрузка уровня не нужна
 
 function loadLevel(levelLayout: LevelData, levelIdFromServer: string): void {
 	if (currentGame) {
@@ -295,49 +394,46 @@ function loadLevel(levelLayout: LevelData, levelIdFromServer: string): void {
 	console.log(`Загрузка уровня: ${levelIdFromServer}`);
 	try {
 		levelStartTime = performance.now();
-		api.startAttempt(currentLevelServerId) // Нет нужды ждать этот промис для старта игры
+		api.startAttempt(currentLevelServerId)
 			.then((data) => console.log('Попытка игры начата на сервере:', data?.attemptId))
 			.catch((error) => console.error('Ошибка старта попытки на сервере:', error));
 
 		currentGame = new Game(
 			levelLayout,
 			CELL_SIZE,
-			gameCanvasContainer, // Передаем контейнер для canvas
-			(_completedLevelLayout) => handleVictory(levelIdFromServer), // Передаем только ID
+			gameCanvasContainer, 
+			(_completedLevelLayout) => handleVictory(levelIdFromServer),
 		);
 		currentGame.start();
 
-        // Обновляем состояние кнопок управления игрой
 		startButton.disabled = true;
 		stopButton.disabled = false;
 		resetButton.disabled = false;
-        gameControlsContainer.style.display = 'flex'; // Убедимся, что кнопки видны
-        levelSelectionContainer.style.display = 'none'; // Скрываем список уровней
+        gameControlsContainer.style.display = 'flex'; 
+        levelSelectionContainer.style.display = 'none';
 		hideVictoryModal();
 	} catch (error) {
 		console.error('Ошибка при создании или запуске игры:', error);
 		gameCanvasContainer.innerHTML = `<p class="error-message">Ошибка загрузки игры. См. консоль.</p>`;
 		disableGameControls();
-        gameControlsContainer.style.display = 'flex'; // Кнопки должны быть видны, чтобы можно было вернуться
+        gameControlsContainer.style.display = 'flex';
         levelSelectionContainer.style.display = 'none';
 	}
 }
 
-// --- Функции аутентификации (остаются те же, что вы предоставили) ---
 async function register(username: string, password: string) {
 	try {
 		const data = await api.register(username, password);
-		authStore.setCurrentUser(data.user); // Это вызовет subscribe и нужные обновления UI
+		authStore.setCurrentUser(data.user);
 	} catch (error) {
 		console.error('Ошибка регистрации:', error);
-        // Alert уже в apiRequest
 	}
 }
 
 async function login(username: string, password: string) {
 	try {
 		const data = await api.login(username, password);
-		authStore.setCurrentUser(data.user); // Это вызовет subscribe
+		authStore.setCurrentUser(data.user);
 	} catch (error) {
 		console.error('Ошибка входа:', error);
 	}
@@ -346,19 +442,19 @@ async function login(username: string, password: string) {
 async function logout() {
 	try {
 		await api.logout();
-		authStore.setCurrentUser(null); // Это вызовет subscribe
+		authStore.setCurrentUser(null);
 	} catch (error) {
 		console.error('Ошибка выхода:', error);
 	}
 }
 
-async function checkInitialAuthStatus() { // Переименованная функция
+async function checkInitialAuthStatus() {
 	try {
         const data = await api.getMe();
-        authStore.setCurrentUser(data ? data.user : null); // Это вызовет subscribe
+        authStore.setCurrentUser(data ? data.user : null);
     } catch (error) {
         console.error('Ошибка проверки сессии:', error);
-        authStore.setCurrentUser(null); // Это вызовет subscribe
+        authStore.setCurrentUser(null);
     }
 }
 
@@ -367,11 +463,8 @@ async function handleVictory(completedLevelServerId: string): Promise<void> {
     const completionTimeMs = levelStartTime ? Math.round(performance.now() - levelStartTime) : 0;
     levelStartTime = null;
 
-    // Деактивируем игровые кнопки, но не кнопку "Продолжить" или "К выбору уровней"
     if (currentGame) {
-        // startButton.disabled = false; // Будет управляться модалкой
         stopButton.disabled = true;
-        // resetButton.disabled = false; // Можно оставить активной
     }
 
 	try {
@@ -381,18 +474,16 @@ async function handleVictory(completedLevelServerId: string): Promise<void> {
             finalLength: currentGame?.players[0]?.length || 0,
         });
         console.log('Данные о победе отправлены на сервер.');
-        // Не загружаем уровни здесь, модалка предложит "след. уровень" или "выбрать"
-        // await fetchAvailableLevels();
     } catch (error) {
         console.error('Ошибка отправки данных о победе:', error);
     }
     showVictoryModal(completedLevelServerId);
 }
 
-async function fetchAvailableLevels() { // Эта функция теперь только загружает и обновляет UI списка
+async function fetchAvailableLevels() {
     const user = authStore.getCurrentUser();
     if (!user) {
-        availableServerLevels = []; // Очищаем для неавторизованного
+        availableServerLevels = [];
         updateLevelSelectionUI();
         return;
     }
@@ -403,19 +494,17 @@ async function fetchAvailableLevels() { // Эта функция теперь т
 		availableServerLevels = levelsDataFromServer || [];
 		console.log('Доступные уровни:', availableServerLevels);
         updateLevelSelectionUI();
-        // Автоматическую загрузку уровня убрали отсюда
-        // Если активной игры нет, gameCanvasContainer покажет заглушку "Выберите уровень"
         if (!currentGame) {
             gameCanvasContainer.innerHTML = '<p class="select-level-prompt">Выберите уровень, чтобы начать игру.</p>';
-            disableGameControls(); // Убедимся, что игровые кнопки выключены
-            gameControlsContainer.style.display = 'none'; // Скрываем кнопки управления игрой, если нет игры
-            levelSelectionContainer.style.display = 'flex'; // Показываем список уровней
+            disableGameControls(); 
+            gameControlsContainer.style.display = 'none';
+            levelSelectionContainer.style.display = 'flex';
         }
 
     } catch (error) {
         console.error("Ошибка при загрузке списка уровней:", error);
         availableServerLevels = [];
-        updateLevelSelectionUI(); // Покажет сообщение об ошибке
+        updateLevelSelectionUI();
         gameCanvasContainer.innerHTML = '<p class="error-message">Ошибка загрузки уровней. См. консоль.</p>';
         disableGameControls();
     }
@@ -428,7 +517,7 @@ function disableGameControls() {
 }
 
 function createVictoryModal(): void {
-	victoryModalContainer.innerHTML = ''; // Очищаем для пересоздания
+	victoryModalContainer.innerHTML = '';
 	victoryModalContainer.className = 'modal victory-modal';
 	victoryModalContainer.style.display = 'none';
 
@@ -449,7 +538,6 @@ function createVictoryModal(): void {
 	const nextLevelButton = document.createElement('button');
 	nextLevelButton.textContent = 'Следующий уровень';
 	nextLevelButton.className = 'modal-button next-level-button';
-	// Обработчик будет добавлен в showVictoryModal, т.к. зависит от completedLevelServerId
 
 	const selectLevelButton = document.createElement('button');
 	selectLevelButton.textContent = 'Выбрать уровень';
@@ -461,8 +549,8 @@ function createVictoryModal(): void {
             currentGame = null;
         }
         gameCanvasContainer.innerHTML = '<p class="select-level-prompt">Выберите уровень, чтобы начать игру.</p>';
-        fetchAvailableLevels(); // Обновить список и показать его
-        gameControlsContainer.style.display = 'none'; // Скрыть кнопки игры
+        fetchAvailableLevels();
+        gameControlsContainer.style.display = 'none';
         disableGameControls();
         currentLevelServerId = null;
     });
@@ -470,23 +558,21 @@ function createVictoryModal(): void {
 	buttonContainer.append(nextLevelButton, selectLevelButton);
 	modalContent.append(title, message, buttonContainer);
 	victoryModalContainer.append(modalContent);
-	// document.body.append(victoryModalContainer); // Уже в HTML
 }
 
-let nextLevelButtonHandler: (() => void) | null = null; // Для удаления старого обработчика
+let nextLevelButtonHandler: (() => void) | null = null;
 
 function showVictoryModal(completedLevelId: string): void {
 	if (!victoryModalContainer) return;
     const nextLevelButton = victoryModalContainer.querySelector('.next-level-button') as HTMLButtonElement;
 
-    // Удаляем предыдущий обработчик, если он был
     if (nextLevelButtonHandler && nextLevelButton) {
         nextLevelButton.removeEventListener('click', nextLevelButtonHandler);
     }
 
     nextLevelButtonHandler = async () => {
 		hideVictoryModal();
-        await fetchAvailableLevels(); // Обновляем список, т.к. могли открыться новые уровни
+        await fetchAvailableLevels();
         const currentIdx = availableServerLevels.findIndex(l => l.id === completedLevelId);
         let nextPlayableLevel: typeof availableServerLevels[0] | undefined;
         if (currentIdx !== -1) {
@@ -499,13 +585,13 @@ function showVictoryModal(completedLevelId: string): void {
         }
 
         if (nextPlayableLevel) {
-            levelSelectionContainer.style.display = 'none'; // Скрываем выбор уровней
-            gameControlsContainer.style.display = 'flex';  // Показываем кнопки игры
+            levelSelectionContainer.style.display = 'none'; 
+            gameControlsContainer.style.display = 'flex'; 
             loadLevel(nextPlayableLevel.layout, nextPlayableLevel.id);
         } else {
             console.log("Больше нет доступных уровней или это был последний.");
             gameCanvasContainer.innerHTML = `<p class="all-levels-completed-message">Поздравляем! Все доступные уровни пройдены!</p>`;
-            levelSelectionContainer.style.display = 'flex'; // Показываем список (где будет видно, что все пройдено)
+            levelSelectionContainer.style.display = 'flex';
             gameControlsContainer.style.display = 'none';
             disableGameControls();
             if (currentGame) { currentGame.destroy(); currentGame = null;}

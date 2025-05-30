@@ -1,9 +1,7 @@
-// src/assetLoader.ts
-
 export interface SpriteAsset {
-    id: string; // Уникальный идентификатор спрайта
-    src: string; // Путь к файлу изображения
-    image?: HTMLImageElement; // Загруженное изображение
+    id: string; 
+    src: string; 
+    image?: HTMLImageElement;
 }
 
 export interface BackgroundAsset {
@@ -35,20 +33,20 @@ function assetLoaded() {
 }
 
 export function loadAllAssets(): Promise<Record<string, HTMLImageElement>> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         if (Object.keys(loadedAssets).length === allAssets.length && allAssets.length > 0) {
-            resolve(loadedAssets); // Уже загружены
+            resolve(loadedAssets); 
             return;
         }
         if (allAssets.length === 0) {
-            resolve({}); // Нет ассетов для загрузки
+            resolve({});
             return;
         }
 
-        assetsLoadedCount = 0; // Сбрасываем счетчик перед новой загрузкой
+        assetsLoadedCount = 0; 
 
         allAssets.forEach(asset => {
-            if (loadedAssets[asset.id]) { // Если этот конкретный ассет уже загружен ранее
+            if (loadedAssets[asset.id]) {
                 assetLoaded();
                 if (assetsLoadedCount === allAssets.length) {
                     resolve(loadedAssets);
@@ -60,7 +58,7 @@ export function loadAllAssets(): Promise<Record<string, HTMLImageElement>> {
             img.src = asset.src;
             img.onload = () => {
                 loadedAssets[asset.id] = img;
-                asset.image = img; // Сохраняем в оригинальном объекте для удобства (опционально)
+                asset.image = img;
                 assetLoaded();
                 console.log(`Asset loaded: ${asset.src}`);
                 if (assetsLoadedCount === allAssets.length) {
@@ -69,13 +67,10 @@ export function loadAllAssets(): Promise<Record<string, HTMLImageElement>> {
             };
             img.onerror = () => {
                 console.error(`Failed to load asset: ${asset.src}`);
-                // Можно либо реджектить промис, либо продолжать без этого ассета
-                assetLoaded(); // Считаем его "обработанным", чтобы промис завершился
+                assetLoaded();
                 if (assetsLoadedCount === allAssets.length) {
-                    // Если это была последняя ошибка, и мы решили не реджектить, то резолвим с тем, что есть
                     resolve(loadedAssets);
                 }
-                // reject(new Error(`Failed to load asset: ${asset.src}`)); // Вариант с реджектом
             };
         });
     });
@@ -85,5 +80,4 @@ export function getAsset(id: string): HTMLImageElement | undefined {
     return loadedAssets[id];
 }
 
-// Экспортируем также сами списки для использования в других модулях, если нужно
 export { spritesToLoad, backgroundsToLoad };

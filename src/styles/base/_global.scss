@@ -95,6 +95,7 @@ button {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+	gap: 10px;
 
     .app-title {
         font-size: var(--font-size-large);
@@ -114,14 +115,14 @@ button {
 #app-main {
     flex-grow: 1;
     padding: var(--spacing-medium);
-    display: flex; // Для центрирования содержимого страниц, если нужно
+    display: flex;
     justify-content: center;
-    align-items: flex-start; // или center
+    align-items: flex-start;
 }
 
 .page {
     width: 100%;
-    max-width: 900px; // Ограничение ширины для контента страницы
+    max-width: 900px;
 }
 
 #auth-page {
@@ -154,7 +155,7 @@ button {
             padding: var(--spacing-small) var(--spacing-medium);
             border: 1px solid #ccc;
             border-radius: var(--border-radius);
-            box-sizing: border-box; // Важно
+            box-sizing: border-box;
             margin-bottom: var(--spacing-medium);
 			color: #000000;
         }
@@ -174,14 +175,12 @@ button {
     gap: var(--spacing-medium);
 }
 
-.controls-container { /* Общие стили для контейнеров с кнопками */
+.controls-container { 
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
     padding: 10px;
-    // margin-bottom: 10px;
-    // margin-top: 5px;
     text-align: center;
     background-color: rgba(255,255,255,0.8);
     border-radius: var(--border-radius);
@@ -189,7 +188,7 @@ button {
 
 #level-selection-container {
 	width: 100%;
-    max-width: 800px; /* Ограничиваем ширину списка уровней */
+    max-width: 800px; 
     background-color: #fff;
     padding: var(--spacing-medium);
     border-radius: var(--border-radius);
@@ -221,18 +220,16 @@ button {
 			color: var(--disabled-text, #aaa);
 			cursor: not-allowed;
 			border-color: #e0e0e0;
-			// Можно добавить эффект "заморозки" или прозрачности
-			// opacity: 0.7;
 		}
-		&:not(.locked):not(.completed):not(:disabled) { // Стиль для активной, доступной кнопки
-			background-color: var(--accent-color, #9daaf2); // Или другой цвет для доступных
+		&:not(.locked):not(.completed):not(:disabled) {
+			background-color: var(--accent-color, #9daaf2); 
 			color: white;
 			&:hover {
 				background-color: darken(#9daaf2, 10%);
 			}
 		}
 		 &.completed:not(:disabled) {
-			background-color: #d4edda; // Зеленоватый для пройденных
+			background-color: #d4edda;
 			border-color: #c3e6cb;
 			color: #155724;
 			 &:hover {
@@ -243,25 +240,24 @@ button {
 }
 
 
-.game-container { /* Контейнер для canvas */
+.game-container { 
     width: 90%;
-    max-width: 800px; // Можно настроить
+    max-width: 800px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 canvas {
-    border: 2px solid var(--primary-color, black); // Используем переменную
+    border: 2px solid var(--primary-color, black); 
     display: block;
     max-width: 100%;
-    max-height: calc(80vh - 150px); // Оставляем место для шапки и контролов
+    max-height: calc(80vh - 150px); 
     object-fit: contain;
-    background-color: var(--background-canvas, white); // Переменная для фона канваса
+    background-color: var(--background-canvas, white); 
 }
 
-// Стили для кнопок (взять из _buttons.scss и адаптировать)
-.button { // Общий класс для всех кнопок
+.button { 
     padding: 10px 18px;
     border: none;
     border-radius: var(--border-radius);
@@ -287,9 +283,8 @@ canvas {
 }
 
 #game-canvas-container {
-    // Стили уже есть, но можно добавить заглушку
     .select-level-prompt, .error-message, .all-levels-completed-message {
-        min-height: 300px; // Чтобы контейнер не схлопывался
+        min-height: 300px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -298,7 +293,7 @@ canvas {
         background-color: #f9f9f9;
         border: 1px dashed #ccc;
         border-radius: var(--border-radius);
-        width: 80%; // Примерно
+        width: 80%;
         max-width: 600px;
         color: #555;
     }
@@ -321,13 +316,6 @@ canvas {
 	transition:
 		opacity 0.3s ease,
 		visibility 0s linear 0.3s;
-
-
-	// &.modal--visible {
-	//   opacity: 1;
-	//   visibility: visible;
-	//   transition: opacity 0.3s ease;
-	// }
 
 	.modal-content {
 		background-color: #fff;
@@ -391,4 +379,38 @@ canvas {
 			}
 		}
 	}
+}
+
+#admin-page {
+    padding: 20px;
+    background-color: #f9f9f9;
+    color: #333;
+
+    h2, h3 {
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    section {
+        margin-bottom: 30px;
+        padding: 15px;
+        background-color: #fff;
+        border-radius: var(--border-radius);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #e9ecef;
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #f8f9fa;
+        }
+    }
 }
