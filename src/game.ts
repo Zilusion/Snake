@@ -29,7 +29,9 @@ export class Game {
 	private keyActionMap: Map<
 		string,
 		{ playerId: number; direction: DirectionValue }
-	> = new Map();
+		> = new Map();
+	
+	private lastRenderTime: number = 0;
 
 	public constructor(
 		levelData: LevelData,
@@ -84,6 +86,8 @@ export class Game {
 		console.log('Игра началась!');
 
 		let lastTickTime = performance.now();
+		this.lastRenderTime = performance.now();
+		this.players.forEach(player => player.startAnimationTick());
 		this.applyGravityToAllPlayers();
 		this.render();
 
@@ -93,12 +97,18 @@ export class Game {
 				return;
 			}
 
+			const renderDeltaTime = currentTime - this.lastRenderTime;
+            this.lastRenderTime = currentTime;
+
+            this.players.forEach(player => player.updateVisuals(renderDeltaTime, GameLoopParameters.TICK_MS));
+            this.render(); 
+
 			const deltaTime = currentTime - lastTickTime;
 			if (deltaTime >= GameLoopParameters.TICK_MS) {
 				lastTickTime =
 					currentTime - (deltaTime % GameLoopParameters.TICK_MS);
-				this.update();
-				this.render();
+					this.players.forEach(player => player.startAnimationTick());
+					this.update();
 			}
 			this.gameLoopId = this.isActive
 				? requestAnimationFrame(gameTick)
@@ -206,8 +216,10 @@ export class Game {
 
 		if (this.apples.length === 0 && this.isActive) {
 			console.log('Победа! Все яблоки съедены!');
-			this.stop();
-			this.onVictory(this.levelData);
+			setTimeout(() => {
+				this.stop();
+				this.onVictory(this.levelData);
+			}, 200);
 		}
 	}
 

@@ -19,7 +19,7 @@ export function parseLevelLayout(levelData: LevelData): {
 			const point = { x, y };
 			switch (char) {
 				case '#': {
-					blocks.push(new Block(x, y, Colors.BLOCK));
+					blocks.push(new Block(x, y, 'block_ground', 2));
 					break;
 				}
 				case 'A': {

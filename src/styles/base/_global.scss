@@ -28,7 +28,7 @@ body {
 	flex-direction: column;
 	align-items: center;
 	min-height: 100vh;
-	background-color: #f0f0f0;
+	background-color: #153c4a;
 }
 
 .controls-container {
@@ -89,20 +89,26 @@ button {
 }
 
 #app-header {
-    background-color: var(--primary-color);
+    background-color: #153c4a;
     color: var(--text-color);
     padding: var(--spacing-medium);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
 
     .app-title {
         font-size: var(--font-size-large);
         margin: 0;
+		margin-right: auto;
     }
     .current-user-display {
         margin: 0 var(--spacing-medium);
     }
+
+	button {
+		background-color: #d0d8db;
+		color: #000000;
+	}
 }
 
 #app-main {

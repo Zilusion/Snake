@@ -9,6 +9,10 @@ export class Player {
 	public readonly color: string;
 	public readonly headColor: string;
 
+	public visualSegments: Point[]; 
+    private animationProgress: number = 0; 
+    private lastLogicalSegments: Point[]; 
+
 	public constructor(
 		id: number,
 		startX: number,
@@ -22,7 +26,32 @@ export class Player {
 		this.length = 2;
 		this.color = tailColor;
 		this.headColor = headColor;
+
+		this.visualSegments = this.segments.map(s => ({ ...s }));
+        this.lastLogicalSegments = this.segments.map(s => ({ ...s }));
 	}
+
+	public startAnimationTick(): void {
+        this.lastLogicalSegments = this.segments.map(s => ({ ...s }));
+        this.animationProgress = 0;
+	}
+	
+	public updateVisuals(deltaTime: number, tickDuration: number): void {
+        if (this.animationProgress < 1) {
+            this.animationProgress += deltaTime / tickDuration;
+            this.animationProgress = Math.min(this.animationProgress, 1); 
+
+            this.visualSegments = this.segments.map((currentSeg, index) => {
+                const lastSeg = this.lastLogicalSegments[index] || currentSeg; 
+
+                const visualX = lastSeg.x + (currentSeg.x - lastSeg.x) * this.animationProgress;
+                const visualY = lastSeg.y + (currentSeg.y - lastSeg.y) * this.animationProgress;
+                return { x: visualX, y: visualY };
+            });
+        } else {
+            this.visualSegments = this.segments.map(s => ({ ...s }));
+        }
+    }
 
 	public performMove(
 		direction: DirectionValue,
