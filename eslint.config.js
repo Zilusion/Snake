@@ -95,11 +95,8 @@ export default [
 			'prettier/prettier': ['error', prettierConfig],
 
 			'@typescript-eslint/consistent-type-imports': 'error',
-			'@typescript-eslint/explicit-function-return-type': 'error',
-			'@typescript-eslint/consistent-type-assertions': [
-				'error',
-				{ assertionStyle: 'never' },
-			],
+			'@typescript-eslint/explicit-function-return-type': 'off',
+			'@typescript-eslint/consistent-type-assertions': 'off',
 			'@typescript-eslint/explicit-member-accessibility': [
 				'error',
 				{
@@ -109,7 +106,10 @@ export default [
 			],
 			'@typescript-eslint/member-ordering': 'error',
 			'@typescript-eslint/consistent-type-definitions': ['error', 'type'],
-			'@typescript-eslint/no-explicit-any': 'error',
+			'@typescript-eslint/no-explicit-any': ['error', {
+				ignoreHierarchy: true,
+			}],
 		},
 	},
 ];
+

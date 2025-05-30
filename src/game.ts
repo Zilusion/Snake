@@ -20,7 +20,7 @@ export class Game {
 	private readonly gameContainer: HTMLElement;
 	private readonly onVictory: (completedLevelData: LevelData) => void;
 
-	private players: Player[] = [];
+	public players: Player[] = [];
 	private apples: Apple[] = [];
 	private blocks: Block[] = [];
 

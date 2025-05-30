@@ -19,6 +19,33 @@
 		<title>Snake</title>
 	</head>
 	<body>
+		<div id="app-container">
+			<header id="app-header">
+				<!-- Место для лого, информации о пользователе, кнопки выхода -->
+			</header>
+	
+			<main id="app-main">
+				<section id="auth-page" class="page" style="display: none;">
+					<!-- Сюда будут добавляться формы логина/регистрации -->
+				</section>
+	
+				<section id="game-page" class="page" style="display: none;">
+					<div id="level-selection-container" class="controls-container">
+						<!-- Сюда будут добавляться кнопки выбора уровней -->
+					</div>
+					<div id="game-canvas-container" class="game-container">
+						<!-- Сюда будет добавляться canvas игры -->
+					</div>
+					<div id="game-controls-container" class="controls-container">
+						<!-- Сюда будут добавляться кнопки Старт/Стоп/Перезапуск -->
+					</div>
+				</section>
+			</main>
+	
+			<div id="victory-modal-container">
+				 <!-- Сюда будет добавляться модальное окно победы -->
+			</div>
+		</div>
 		<script type="module" src="/src/main.ts"></script>
 	</body>
 </html>
