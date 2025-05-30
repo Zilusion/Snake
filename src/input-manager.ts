@@ -13,11 +13,11 @@ export class InputManager {
 	}
 
 	public destroy(): void {
-		globalThis.removeEventListener('keydown', this.handleKeyDownBound);
-		globalThis.removeEventListener('keyup', this.handleKeyUpBound);
-		globalThis.removeEventListener('blur', this.clearActiveKeysBound);
-		console.log('InputManager обработчики удалены');
-	}
+        globalThis.removeEventListener('keydown', this.handleKeyDownBound);
+        globalThis.removeEventListener('keyup', this.handleKeyUpBound);
+        globalThis.removeEventListener('blur', this.clearActiveKeysBound);
+        console.log('InputManager обработчики удалены');
+    }
 
 	public getActiveKeys(): ReadonlySet<string> {
 		return this.activeKeys;
@@ -46,7 +46,7 @@ export class InputManager {
 				'ArrowRight',
 			].includes(event.key)
 		) {
-			event.preventDefault();
+			// event.preventDefault();
 		}
 	}
 

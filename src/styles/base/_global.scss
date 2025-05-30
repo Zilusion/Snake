@@ -28,7 +28,6 @@ body {
 	flex-direction: column;
 	align-items: center;
 	min-height: 100vh;
-	padding: 10px;
 	background-color: #f0f0f0;
 }
 
@@ -41,6 +40,7 @@ body {
 	margin-bottom: 10px;
 	margin-top: 5px;
 	text-align: center;
+	color: var(--text-color);
 }
 
 .game-container {
@@ -79,6 +79,224 @@ button {
 		cursor: not-allowed;
 		border-color: #e0e0e0;
 	}
+}
+
+#app-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+}
+
+#app-header {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    padding: var(--spacing-medium);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .app-title {
+        font-size: var(--font-size-large);
+        margin: 0;
+    }
+    .current-user-display {
+        margin: 0 var(--spacing-medium);
+    }
+}
+
+#app-main {
+    flex-grow: 1;
+    padding: var(--spacing-medium);
+    display: flex; // Для центрирования содержимого страниц, если нужно
+    justify-content: center;
+    align-items: flex-start; // или center
+}
+
+.page {
+    width: 100%;
+    max-width: 900px; // Ограничение ширины для контента страницы
+}
+
+#auth-page {
+    .auth-form-container {
+        background-color: #fff;
+        padding: var(--spacing-large);
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-medium);
+        max-width: 400px;
+        margin: 20px auto;
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-medium);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--spacing-small);
+            font-weight: bold;
+			color: var(--primary-color);
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: var(--spacing-small) var(--spacing-medium);
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            box-sizing: border-box; // Важно
+            margin-bottom: var(--spacing-medium);
+			color: #000000;
+        }
+
+        .auth-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: var(--spacing-medium);
+        }
+    }
+}
+
+#game-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-medium);
+}
+
+.controls-container { /* Общие стили для контейнеров с кнопками */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    // margin-bottom: 10px;
+    // margin-top: 5px;
+    text-align: center;
+    background-color: rgba(255,255,255,0.8);
+    border-radius: var(--border-radius);
+}
+
+#level-selection-container {
+	width: 100%;
+    max-width: 800px; /* Ограничиваем ширину списка уровней */
+    background-color: #fff;
+    padding: var(--spacing-medium);
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+	color: #000000;
+
+    .level-selection-title {
+        text-align: center;
+        margin-bottom: var(--spacing-medium);
+        color: var(--primary-color);
+    }
+
+    .level-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-small);
+        justify-content: center;
+    }
+
+	.auth-required-message, .no-levels-message {
+        text-align: center;
+        padding: var(--spacing-large) 0;
+        color: #777;
+    }
+
+    .level-button {
+		&.locked {
+			background-color: var(--disabled-bg, #f5f5f5);
+			color: var(--disabled-text, #aaa);
+			cursor: not-allowed;
+			border-color: #e0e0e0;
+			// Можно добавить эффект "заморозки" или прозрачности
+			// opacity: 0.7;
+		}
+		&:not(.locked):not(.completed):not(:disabled) { // Стиль для активной, доступной кнопки
+			background-color: var(--accent-color, #9daaf2); // Или другой цвет для доступных
+			color: white;
+			&:hover {
+				background-color: darken(#9daaf2, 10%);
+			}
+		}
+		 &.completed:not(:disabled) {
+			background-color: #d4edda; // Зеленоватый для пройденных
+			border-color: #c3e6cb;
+			color: #155724;
+			 &:hover {
+				background-color: darken(#d4edda, 5%);
+			}
+		}
+	}
+}
+
+
+.game-container { /* Контейнер для canvas */
+    width: 90%;
+    max-width: 800px; // Можно настроить
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    border: 2px solid var(--primary-color, black); // Используем переменную
+    display: block;
+    max-width: 100%;
+    max-height: calc(80vh - 150px); // Оставляем место для шапки и контролов
+    object-fit: contain;
+    background-color: var(--background-canvas, white); // Переменная для фона канваса
+}
+
+// Стили для кнопок (взять из _buttons.scss и адаптировать)
+.button { // Общий класс для всех кнопок
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--border-radius);
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    transition: background-color 0.2s ease, transform 0.1s ease;
+
+    &:hover {
+        background-color: var(--accent-color);
+    }
+    &:active {
+        transform: scale(0.98);
+    }
+    &:disabled {
+        background-color: var(--disabled-bg);
+        color: var(--disabled-text);
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+#game-canvas-container {
+    // Стили уже есть, но можно добавить заглушку
+    .select-level-prompt, .error-message, .all-levels-completed-message {
+        min-height: 300px; // Чтобы контейнер не схлопывался
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: var(--spacing-large);
+        background-color: #f9f9f9;
+        border: 1px dashed #ccc;
+        border-radius: var(--border-radius);
+        width: 80%; // Примерно
+        max-width: 600px;
+        color: #555;
+    }
+    .error-message { color: red; }
 }
 
 .modal {
